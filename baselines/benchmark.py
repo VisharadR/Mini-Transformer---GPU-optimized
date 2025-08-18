@@ -3,6 +3,15 @@ import torch
 import numpy as np 
 from tiny_transformer_torch import TinyTransformer
 
+import os, sys
+PROJ_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if PROJ_ROOT not in sys.path:
+    sys.path.insert(0, PROJ_ROOT)
+
+
+from engine.perf_toggles import enable_fast_paths
+enable_fast_paths()
+
 
 @torch.inference_mode()
 def bench(model, seq_lens=(128, 512), batch_sizes=(1, 4, 16), warmup=10, iters=50):
@@ -39,3 +48,4 @@ if __name__ == "__main__":
 
 
 
+ 

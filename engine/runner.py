@@ -1,5 +1,9 @@
 import torch
 
+torch.backends.cuda.matmul.allow_tf32 = True     # enable TF32
+torch.backends.cudnn.benchmark = True            # pick best algos for your shapes
+torch.set_float32_matmul_precision("high")       # allow tensor cores to kick in
+
 import os, sys
 PROJ_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if PROJ_ROOT not in sys.path:
@@ -12,6 +16,7 @@ from engine.fused_attention import TritonSelfAttention
 class Engine:
     def __init__(self, d_model=256, n_heads=4, depth=4, vocab=32000, use_triton_attention=True):
         self.model = TinyTransformer(d_model, n_heads, depth, vocab).to("cuda" if torch.cuda.is_available() else "cpu").eval()
+        
         self.use_triton_attention = use_triton_attention
 
         if self.use_triton_attention:
@@ -22,7 +27,10 @@ class Engine:
 
     @torch.inference_mode()
     def forward(self, idx):
-        return self.model(idx) 
+        if next(self.model.parameters()).device.type == "cuda":
+            with torch.amp.autocast('cuda' ,dtype=torch.float16):
+                return self.model(idx)
+        return self.model(idx)
     
 
 
