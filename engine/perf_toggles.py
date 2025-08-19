@@ -1,12 +1,15 @@
 import torch
 
 def enable_fast_paths():
-    # allow TensorFloat32 on tensor cores for matrix multiplications (safe for inference)
+     # Enable cuDNN auto-tuner for optimal kernels
+    torch.backends.cudnn.benchmark = True  
+
+    # Allow TensorFloat-32 (faster matmul on Ampere+ GPUs, minimal accuracy loss)
     torch.backends.cuda.matmul.allow_tf32 = True
-    # pick best algorithms for your input shapes 
-    torch.backends.cudnn.benchmark = True
-    # allow tensor cores to kick in for float32 matmuls
-    try:
-        torch.set_float32_matmul_precision("high") # "medium" if you want to be conservative
-    except Exception:
-        pass
+    torch.backends.cudnn.allow_tf32 = True
+
+    # Use high precision for float32 matmul (improves throughput)
+    if hasattr(torch, "set_float32_matmul_precision"):
+        torch.set_float32_matmul_precision("high")
+
+    print("[PerfToggles] cuDNN benchmark ON, TF32 allowed, matmul_precision=high")
