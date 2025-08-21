@@ -117,7 +117,7 @@ CI is set up to:
 - No benchmarking is done in CI (benchmarks should be run locally).
 
 ## 📊 Project Structure
-
+```bash
 baselines/           # PyTorch model + benchmark
   ├── benchmark_engine.py
   ├── benchmark_postln.py
@@ -141,7 +141,7 @@ scripts/
   ├── bench_onnx.py
   ├── quantize_onnx.py
   ├── export_coreml.py 
-
+```
 ## ✅ Roadmap
 
 - Baseline PyTorch benchmark
