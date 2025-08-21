@@ -1,0 +1,37 @@
+name: onnx-parity
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+
+
+jobs:
+  verfiy-onnx:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install deps
+        runs: |
+          python -m pip install --upgrade pip
+          pip install "transformers==4.*" onnx onnxruntime
+
+      - name: Export onnx
+        run: |
+          python scripts/export_coreml.py 
+
+      - name: Verify parity (PyTorch vs ONNX)
+        run: |
+          python scripts/verify_onnx.py --onnx models/intent_classifier.onnx --provider CPU
+
+      - name: Upload ONNX artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: intent_classifier.onnx
+          path: models/intent_classifier.onnx
