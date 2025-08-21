@@ -1,30 +1,43 @@
 # Mini Transformer – GPU Optimized
 
-```bash
-🚀 A lightweight, GPU-optimized implementation of transformer-based models with support for PyTorch, ONNX Runtime, CoreML, and quantization.
 
-The goal of this project is to demonstrate:
+This project is about building a **tiny version of a Transformer model** (the same kind of model used in ChatGPT, BERT, and GPT models) — but in a way that’s **fast, lightweight, and optimized for GPUs**.  
 
-How to build and benchmark compact transformer models.
+It also shows how to make the model **portable** so it can run not just in PyTorch (where it is trained), but also in **ONNX** (for faster deployment) and **CoreML** (for Apple devices like iPhones and Macs).  
 
-How to export models across frameworks (ONNX, CoreML).
+Think of this project as a **mini-lab for AI model optimization**:  
+- Train and test the model 🏋️  
+- Convert it into formats for different platforms 🔄  
+- Make it smaller and faster ⚡  
+- Verify that it works correctly ✅  
 
-How to validate parity between frameworks.
+---
 
-How to optimize runtime performance on CPUs, GPUs, and Apple Silicon.
+## 🌟 Why This Project Matters  
+
+Modern AI models are **big** and **slow**. They work great on powerful servers but are hard to deploy on smaller devices. This project shows:  
+
+- How to **shrink models** without losing accuracy.  
+- How to **move models** between platforms (PyTorch → ONNX → CoreML).  
+- How to **make them faster** for real-world applications like mobile apps, websites, or edge devices.  
+
+In short: *learn how AI goes from the lab to your phone.* 📱  
+
+---
 
 ## 📦 Installation
 
 Clone the repository and create a virtual environment:
-
+```bash
 git clone https://github.com/VisharadR/Mini-Transformer---GPU-optimized.git
 cd mini-transformer-gpu-optimized
-
+```
+```bash
 python -m venv .venv
 source .venv/bin/activate   # On Windows: .venv\Scripts\activate
 
-pip install -r requirements.txt
-
+pip install -r requirements.txt 
+```
 ## ⚡ Quickstart
 1. Run Baseline Benchmark
 
@@ -42,8 +55,9 @@ seq=128, batch=1, p50=4.00ms, p95=4.01ms, tokens/s=35356.6
 ## 🔄 Export Models
 
 Export to ONNX
+```bash
 python scripts/export_onnx.py
-
+```
 
 This produces models/model.onnx.
 
