@@ -14,7 +14,7 @@ How to validate parity between frameworks.
 How to optimize runtime performance on CPUs, GPUs, and Apple Silicon.
 
 ## 📦 Installation
-```bash
+
 Clone the repository and create a virtual environment:
 
 git clone https://github.com/VisharadR/Mini-Transformer---GPU-optimized.git
@@ -40,7 +40,7 @@ seq=128, batch=1, p50=4.00ms, p95=4.01ms, tokens/s=35356.6
 ...
 
 ## 🔄 Export Models
-```bash
+
 Export to ONNX
 python scripts/export_onnx.py
 
@@ -60,7 +60,7 @@ python scripts/bench_onnx.py
 
 ## 🍏 Export to CoreML (Mac only)
 
-```bash
+
 We provide two workflows:
 
 A. Windows/Linux users
@@ -79,7 +79,7 @@ python scripts/export_coreml.py
 
 ## ⚠️ Note: Torch 2.5.x is not fully tested with CoreML. For best results use Torch 2.2.x on macOS.
 
-```bash
+
 🔧 Quantization
 
 We support ONNX quantization (dynamic).
@@ -96,7 +96,6 @@ python scripts/verify_onnx.py --model models/model.int8.onnx
 
 ## 🧪 Continuous Integration (CI)
 
-```bash
 CI is set up to:
 
 Export the ONNX model.
@@ -108,7 +107,7 @@ Upload ONNX artifacts for download.
 No benchmarking is done in CI (benchmarks should be run locally).
 
 ## 📊 Project Structure
-```bash
+
 baselines/           # PyTorch model + benchmark
   ├── benchmark_engine.py
   ├── benchmark_postln.py
@@ -135,7 +134,7 @@ scripts/
 
 ## ✅ Roadmap
 
-```bash
+
  Baseline PyTorch benchmark
 
  Export & verify ONNX
@@ -152,7 +151,7 @@ scripts/
 
 ## 📌 Notes
 
-```bash
+
 Ensure NumPy < 2.0 for CoreML compatibility.
 
 CoreML export requires macOS + Apple Silicon.
