@@ -4,22 +4,33 @@ def as_long_tensor(x):
     return x.to(dtype=torch.long, device="cpu") if isinstance(x, torch.Tensor) else torch.tensor(x, dtype=torch.long)
 
 def export_onnx(model, sample, out_path="models/intent_classifier.onnx"):
+    import torch
+    import os
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
+
+    # Ensure torch.Long (int64) tensors on CPU
+    def as_long_tensor(x):
+        return x.to(dtype=torch.long, device="cpu") if isinstance(x, torch.Tensor) else torch.tensor(x, dtype=torch.long)
     input_ids      = as_long_tensor(sample["input_ids"])
     attention_mask = as_long_tensor(sample["attention_mask"])
+
+    # Dynamic axes for BOTH batch (0) and seq (1)
+    dyn = {
+        "input_ids":      {0: "batch", 1: "seq"},
+        "attention_mask": {0: "batch", 1: "seq"},
+        "logits":         {0: "batch"}  # DistilBERT cls head: [B, C]
+    }
+
     torch.onnx.export(
-        model, (input_ids, attention_mask),
+        model,
+        (input_ids, attention_mask),
         out_path,
         input_names=["input_ids", "attention_mask"],
         output_names=["logits"],
-        dynamic_axes={
-            "input_ids": {1: "seq"},
-            "attention_mask": {1: "seq"},
-            # DistilBERT sequence-classification logits are [B, C] (no seq dim)
-        },
+        dynamic_axes=dyn,
         opset_version=14
     )
-    print(f"[OK] Saved ONNX to {out_path}")
+    print(f"[OK] Saved ONNX to {out_path} (dynamic batch & seq)")
 
 def try_export_coreml(ts, sample, out_path="ios_app/IntentClassifier.mlmodel"):
     try:
