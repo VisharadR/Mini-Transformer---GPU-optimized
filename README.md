@@ -42,15 +42,15 @@ pip install -r requirements.txt
 1. Run Baseline Benchmark
 
 Benchmark the PyTorch model performance:
-
+```bash
 python baselines/benchmark.py
-
+```
 
 Example output:
-
+```bash
 === Benchmarking TinyTransformerPostLN ===
 seq=128, batch=1, p50=4.00ms, p95=4.01ms, tokens/s=35356.6
-...
+```
 
 ## 🔄 Export Models
 
@@ -62,34 +62,30 @@ python scripts/export_onnx.py
 This produces models/model.onnx.
 
 Verify ONNX Parity
+```bash
 python scripts/verify_onnx.py
-
+```
 
 Output should show very small differences (max|Δprobs| ≲ 1e-4):
-
+```bash
 'great movie!': max|Δlogits|=0.00000, max|Δprobs|=0.00000, py=1, onnx=1
-
+```
 Benchmark ONNX Runtime
+```bash
 python scripts/bench_onnx.py
-
+```
 ## 🍏 Export to CoreML (Mac only)
-
 
 We provide two workflows:
 
-A. Windows/Linux users
-Skip CoreML export (not supported).
+A. Windows/Linux users: Skip CoreML export (not supported).
 
 B. macOS users with Apple Silicon
 Install CoreML tools:
-
-pip install coremltools==7.2  # version compatible with numpy<2.0
-
-
-Run:
-
+```bash
+pip install coremltools==7.2 numpy==1.26.4  # version compatible with numpy<2.0
 python scripts/export_coreml.py
-
+```
 
 ## ⚠️ Note: Torch 2.5.x is not fully tested with CoreML. For best results use Torch 2.2.x on macOS.
 
@@ -99,26 +95,26 @@ python scripts/export_coreml.py
 We support ONNX quantization (dynamic).
 
 Run:
-
+```bash
 python scripts/quantize_onnx.py
-
+```
 
 This generates models/model.int8.onnx.
 To verify:
-
+```bash
 python scripts/verify_onnx.py --model models/model.int8.onnx
-
+```
 ## 🧪 Continuous Integration (CI)
 
 CI is set up to:
 
-Export the ONNX model.
+- Export the ONNX model.
 
-Run parity checks (PyTorch ↔ ONNX).
+- Run parity checks (PyTorch ↔ ONNX).
 
-Upload ONNX artifacts for download.
+- Upload ONNX artifacts for download.
 
-No benchmarking is done in CI (benchmarks should be run locally).
+- No benchmarking is done in CI (benchmarks should be run locally).
 
 ## 📊 Project Structure
 
@@ -148,26 +144,24 @@ scripts/
 
 ## ✅ Roadmap
 
+- Baseline PyTorch benchmark
 
- Baseline PyTorch benchmark
+- Export & verify ONNX
 
- Export & verify ONNX
+- ONNX Runtime benchmark
 
- ONNX Runtime benchmark
+- ONNX quantization
 
- ONNX quantization
+- CoreML export (Mac only)
 
- CoreML export (Mac only)
+- Minimal CI parity check job
 
- Minimal CI parity check job
-
- Add more transformer variants (GPT-style, encoder-decoder)
+- Add more transformer variants (GPT-style, encoder-decoder)
 
 ## 📌 Notes
 
+- Ensure NumPy < 2.0 for CoreML compatibility.
 
-Ensure NumPy < 2.0 for CoreML compatibility.
+- CoreML export requires macOS + Apple Silicon.
 
-CoreML export requires macOS + Apple Silicon.
-
-ONNX Runtime runs smoothly on CPU/GPU across platforms.
+- ONNX Runtime runs smoothly on CPU/GPU across platforms.
