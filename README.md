@@ -4,19 +4,14 @@
 🚀 A lightweight, GPU-optimized implementation of transformer-based models with support for PyTorch, ONNX Runtime, CoreML, and quantization.
 
 The goal of this project is to demonstrate:
-
 How to build and benchmark compact transformer models.
-
 How to export models across frameworks (ONNX, CoreML).
-
 How to validate parity between frameworks.
-
 How to optimize runtime performance on CPUs, GPUs, and Apple Silicon.
 
 ## 📦 Installation
 
 Clone the repository and create a virtual environment:
-
 git clone https://github.com/VisharadR/Mini-Transformer---GPU-optimized.git
 cd mini-transformer-gpu-optimized
 
