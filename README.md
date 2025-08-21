@@ -156,4 +156,4 @@ Ensure NumPy < 2.0 for CoreML compatibility.
 
 CoreML export requires macOS + Apple Silicon.
 
-ONNX Runtime runs smoothly on CPU/GPU across platforms.```
+ONNX Runtime runs smoothly on CPU/GPU across platforms.
