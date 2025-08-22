@@ -51,7 +51,7 @@ In short: *learn how AI goes from the lab to your phone.* 📱
 
 - **Export Pipelines**:
   - Convert PyTorch model → ONNX → CoreML.
-  -Verify parity at the logits level to ensure correctness.
+  - Verify parity at the logits level to ensure correctness.
 
 - **Runtime**:
   - Accepts multiple prompts.
