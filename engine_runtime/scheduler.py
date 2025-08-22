@@ -1,65 +1,54 @@
-import time, queue, threading, torch
+from __future__ import annotations
 from dataclasses import dataclass
+from typing import Callable, List, Optional
+import torch
+from engine_runtime.sampling import sample_greedy
 
 @dataclass
 class Request:
-    req_id: str
-    input_ids: torch.Tensor # 1xL
-    max_new_tokens: int = 64
-    stop_id: int | None = None
-    stream_cb: callable | None = None
+    prompt_ids: torch.Tensor      # (1, L0) int64
+    max_new_tokens: int = 32
+    stop_id: Optional[int] = None
+    on_token: Optional[Callable[[int], None]] = None  # streaming callback
 
 class Scheduler:
-    def __init__(self, engine, batch_size=8):
+    """
+    Synchronous token-level batcher:
+      - Prefills all new requests together.
+      - Then loops token-by-token; dynamically batches all active requests.
+    """
+    def __init__(self, engine, batch_cap: int = 16):
         self.engine = engine
-        self.batch_size = batch_size
-        self.q = queue.Queue()
-        self.active = {} # req_id -> state
-        self.thread = threading.Thread(target=self._loop, daemon=True)
+        self.batch_cap = batch_cap
+        self.active: List[dict] = []   # each: {ids: (1,T), remaining:int, stop:int|None, cb:fn|None}
 
+    def _attach(self, req: Request):
+        # prefill
+        logits = self.engine.prefill(req.prompt_ids)                 # (1,V)
+        nxt = sample_greedy(logits).item()
+        if req.on_token: req.on_token(nxt)
+        ids = torch.cat([req.prompt_ids.cpu(), torch.tensor([[nxt]], dtype=torch.long)], dim=1)
+        self.active.append({"ids": ids, "remaining": req.max_new_tokens - 1, "stop": req.stop_id, "cb": req.on_token})
 
-    def start(self): self.thread.start()
-    def submit(self, req: Request): self.q.put(req)
-
-
-    def loop(self):
-        while True:
-            # gather new requests
-            new = []
-            while not self.q.empty() and len(new) < self.batch_size:
-                new.append(self.q.get())
-            if not self.active and not new:
-                time.sleep(0.001)
-                continue
-
-            # PREFILL for new
-            if new:
-                inp = torch.cat([r.input_ids for i in new], dim=0)
-                attn = torch.ones_like(inp)
-                logits = self.engine.prefill(inp, attn)
-                next_ids = torch.argmax(logits, dim=-1).unsqueeze(-1)
-                for i, r in enumerate(new):
-                    self.active[r.req_id] = {
-                        "tokens": r.input_ids.to(inp.device),
-                        "generated": 0,
-                        "next": next_ids[i:i+1],
-                        "cb": r.stream_cb,
-                        "max": r.max_new_tokens,
-                        "stop": r.stop_id
-                    }
-                    if r.stream_cb: r.stream_cb(int(next_ids[i].item()))
-
-            # DECODE step for all active (dynamic batch)
-            if self.active:
-                batch_next = torch.cat([st["next"] for st in self.active.values()], dim=0)
-                logits = self.engine.decode_step(batch_next)
-                next_ids = torch.argmax(logits, dim=-1)
-                #update streams
-                to_finish = []
-                for (rid, st), nid in zip(list(self.active.items()), next_ids):
-                    st["generated"] += 1
-                    st["next"] = nid.view(1,1)
-                    if st["cb"]: st["cb"](int(nid.item()))
-                    if (st["stop"] is not None and int(nid.item()) == st["Stop"]) or st["generated"] >= st["max"]:
-                        to_finish.append(rid)
-                for rid in to_finish: self.active.pop(rid, None)
+    def submit_many(self, requests: List[Request]):
+        for r in requests: self._attach(r)
+        # decode loop
+        while self.active:
+            # build batch of next-token inputs: last token of each active seq
+            last_tokens = [a["ids"][:, -1:] for a in self.active]              # list of (1,1)
+            inp = torch.cat(last_tokens, dim=0)                                # (B,1)
+            logits = self.engine.decode_step(inp)                               # (B,V)
+            next_ids = sample_greedy(logits)                                    # (B,)
+            # update streams
+            to_remove = []
+            for i, a in enumerate(self.active):
+                tid = int(next_ids[i].item())
+                # append token to sequence (kept on CPU to keep it simple)
+                a["ids"] = torch.cat([a["ids"], torch.tensor([[tid]], dtype=torch.long)], dim=1)
+                if a["cb"]: a["cb"](tid)
+                a["remaining"] -= 1
+                if (a["stop"] is not None and tid == a["stop"]) or a["remaining"] <= 0:
+                    to_remove.append(i)
+            # remove finished (from back to front)
+            for i in reversed(to_remove):
+                self.active.pop(i)

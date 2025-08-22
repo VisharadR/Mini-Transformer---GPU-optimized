@@ -1,30 +1,47 @@
-import torch, torch.nn.functional as F
+from __future__ import annotations
+import torch
+import torch.nn.functional as F
+from typing import Optional
 from engine_runtime.engine_iface import Engine
-from engine_runtime.kv_cache import KVMem
 
-class TrochEngine(Engine):
-    def __init__(self, model, tokenizer, max_seq=2048, amp=True):
-        self.m =model.eval().to("cuda" if torch.cuda.is_available() else "cpu")
-        self.tok = tokenizer
-        self.dev = next(self.m.parameters()).device
-        self.amp = amp
 
-        self.n_layers = len(self.m.blocks)
-        self.n_heads = self.m.blocks[0].attn.n_heads
-        self.head_dim = self.m.blocks[0].attn.d_head
+class TorchEngine(Engine):
+    """
+    Minimal wrapper around your TinyTransformer.
+    - prefill(B,L) -> logits(B,V) for last token
+    - decode_step(B,1) -> logits(B,V)
+    NOTE: This baseline recomputes full forward; hook KV later for speed.
+    """
+    def __init__(self, model, amp: bool = True):
+        self.m = model.eval()
+        self.dev = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.m.to(self.dev)
+        self.amp = bool(amp)
+        # Try to infer vocab size if model exposes it
+        self._vocab = getattr(self.m, "tok", None).num_embeddings if hasattr(self.m, "tok") else None
 
+    @property
+    def vocab_size(self) -> Optional[int]:
+        return self._vocab
 
     def _amp_ctx(self):
-        return torch.cuda.amp.autocast(dtype=torch.float16) if (self.dev.type == "cuda" and self.amp) else torch.autocast("cpu", enabled=False)
-    
-    def prefill(self, input_ids: torch.Tensor, attn_mask: torch.Tensor):
-        """B×L -> B×V logits; initializes internal KV via model forward that writes cache (modify your model to expose hooks)."""
-        with torch.inference_mode(), self._amp_ctx():
-            logits = self.m(input_ids.to(self.dev))
+        use = (self.dev.type == "cuda" and self.amp)
+        return torch.amp.autocast('cuda', dtype=torch.float16) if use else torch.autocast(device_type="cpu", enabled=False)
+
+    @torch.inference_mode()
+    def prefill(self, input_ids: torch.Tensor, attention_mask: Optional[torch.Tensor] = None) -> torch.Tensor:
+        x = input_ids.to(self.dev, dtype=torch.long, non_blocking=True)
+        with self._amp_ctx():
+            logits = self.m(x)  # expect (B, L, V)
         return logits[:, -1, :]
-    
-    def decode_step(self, input_ids: torch.Tensor):
-        with torch.inference_mode(), self._amp_ctx():
-            logits = self.m(input_ids.to(self.dev))
+
+    @torch.inference_mode()
+    def decode_step(self, input_ids: torch.Tensor) -> torch.Tensor:
+        # Baseline: full forward on growing sequence (KV cache to be added later)
+        x = input_ids.to(self.dev, dtype=torch.long, non_blocking=True)
+        with self._amp_ctx():
+            logits = self.m(x)
         return logits[:, -1, :]
-    
+
+    def reset(self) -> None:
+        pass
