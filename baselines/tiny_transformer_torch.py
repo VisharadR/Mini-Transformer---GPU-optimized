@@ -56,13 +56,23 @@ class TinyTransformerBlock(nn.Module):
     
 
 class TinyTransformer(nn.Module):
-    def __init__(self, d_model=256, n_heads=4, depth=4, vocab_size=32000):
+    def __init__(self, d_model=256, n_heads=4, depth=4, vocab_size=32000, max_len=4096):
         super().__init__()
         self.tok = nn.Embedding(vocab_size, d_model)
+        self.pos = torch.nn.Parameter(self._build_sin_pos(max_len, d_model), requires_grad=False)
         # self.pos = nn.Parameter(torch.zeros(1, 1024, d_model))  # max sequence length of 1024
         self.blocks = nn.ModuleList([TinyTransformerBlock(d_model, n_heads) for _ in range(depth)])
         self.ln_f = nn.LayerNorm(d_model)
         self.head = nn.Linear(d_model, vocab_size)
+
+    @staticmethod
+    def _build_sin_pos(max_len, d_model):
+        pe = torch.zeros(max_len, d_model)
+        position = torch.arange(0, max_len, dtype=torch.float32).unsqueeze(1)                # [L,1]
+        div_term = torch.exp(torch.arange(0, d_model, 2, dtype=torch.float32) * (-math.log(10000.0) / d_model))
+        pe[:, 0::2] = torch.sin(position * div_term)                                        # even
+        pe[:, 1::2] = torch.cos(position * div_term)                                        # odd
+        return pe.unsqueeze(0)  # [1, L, D]
 
     def _sinusoidal_pos(self, L, d_model, device):
         # Generate sinusoidal positional encodings
@@ -80,8 +90,9 @@ class TinyTransformer(nn.Module):
         B, L = idx.shape
         device = idx.device
         x = self.tok(idx)
-        pos = self._sinusoidal_pos(L, x.size(-1), device) # [1, L, d_model]
-        x = x + pos
+        # pos = self._sinusoidal_pos(L, x.size(-1), device) # [1, L, d_model]
+        # x = x + pos
+        x = x + self.pos[:, :L, :]
         for blk in self.blocks:
             x = blk(x)
         x = self.ln_f(x)

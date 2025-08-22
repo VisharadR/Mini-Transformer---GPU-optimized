@@ -26,7 +26,7 @@ class TorchEngine(Engine):
 
     def _amp_ctx(self):
         use = (self.dev.type == "cuda" and self.amp)
-        return torch.amp.autocast('cuda', dtype=torch.float16) if use else torch.autocast(device_type="cpu", enabled=False)
+        return torch.cuda.amp.autocast(dtype=torch.float16) if use else torch.autocast(device_type="cpu", enabled=False)
 
     @torch.inference_mode()
     def prefill(self, input_ids: torch.Tensor, attention_mask: Optional[torch.Tensor] = None) -> torch.Tensor:
