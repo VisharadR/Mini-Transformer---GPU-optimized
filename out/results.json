@@ -1,0 +1,92 @@
+{
+  "config": {
+    "prompts": [
+      "hello gpu",
+      "deep learning"
+    ],
+    "max_new": 12,
+    "batch_cap": 8,
+    "sampler": "greedy",
+    "topk": 50,
+    "temperature": 1.0,
+    "d_model": 256,
+    "n_heads": 4,
+    "depth": 4,
+    "vocab": 32000,
+    "no_amp": false,
+    "save_outputs": "out/results.json"
+  },
+  "summary": {
+    "p50_ms": 8.83,
+    "p95_ms": 115.59,
+    "steps": 13,
+    "total_ms": 141.92,
+    "tokens_per_s": 112.1
+  },
+  "results": [
+    {
+      "tag": "req1",
+      "prompt_text": "hello gpu",
+      "prompt_ids": [
+        114,
+        111,
+        118,
+        118,
+        121,
+        42,
+        113,
+        122,
+        127
+      ],
+      "generated_ids": [
+        6577,
+        24624,
+        11099,
+        2905,
+        30236,
+        19725,
+        14898,
+        12952,
+        3074,
+        30670,
+        11940,
+        22012
+      ],
+      "generated_text_demo": "6577 24624 11099 2905 30236 19725 14898 12952 3074 30670 11940 22012"
+    },
+    {
+      "tag": "req2",
+      "prompt_text": "deep learning",
+      "prompt_ids": [
+        110,
+        111,
+        111,
+        122,
+        42,
+        118,
+        111,
+        107,
+        124,
+        120,
+        115,
+        120,
+        113
+      ],
+      "generated_ids": [
+        12139,
+        587,
+        31396,
+        12870,
+        9274,
+        2053,
+        23122,
+        12756,
+        27099,
+        29549,
+        14030,
+        596
+      ],
+      "generated_text_demo": "12139 587 31396 12870 9274 2053 23122 12756 27099 29549 14030 596"
+    }
+  ]
+}
