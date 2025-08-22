@@ -25,6 +25,42 @@ In short: *learn how AI goes from the lab to your phone.* 📱
 
 ---
 
+## ✨ Features
+
+- **Custom CUDA Kernels**: Implemented FlashAttention-style kernels for efficient attention on long sequences.
+- **Fused Ops**: Combined residual + layer normalization into a single GPU kernel for lower overhead.
+- **Export Pipelines**:
+  - PyTorch → ONNX → CoreML
+  - Supports CPU, GPU, and Apple Silicon deployment
+- **Benchmark Tools**:
+  - Compare PyTorch vs. ONNX vs. CoreML performance
+  - p50 / p95 latency profiling
+- **Mini Runtime (vLLM-style)**:
+  - Dynamic batching of multiple prompts
+  - Streaming token callbacks
+  - Torch backend (ONNX optional)
+  - End-to-end demo for interactive text generation
+
+---
+
+## 🧩 How It Works
+
+**Model Optimizations**
+-Attention kernels avoid quadratic cost on long sequences.
+-Fused LayerNorm+Residual reduces memory reads/writes.
+
+**Export Pipelines**
+-Convert PyTorch model → ONNX → CoreML.
+-Verify parity at the logits level to ensure correctness.
+
+**Runtime**
+-Accepts multiple prompts.
+-Splits into prefill (process full prompt) and decode (one token at a time).
+-Uses a simple scheduler for dynamic batching.
+-Streams outputs back with callbacks.
+
+---
+
 ## 📦 Installation
 
 Clone the repository and create a virtual environment:
@@ -74,6 +110,13 @@ Benchmark ONNX Runtime
 ```bash
 python scripts/bench_onnx.py
 ```
+
+Run the Runtime Demo
+- Try interactive generation with the custom runtime:
+```bash
+python scripts/run_runtime_demo.py --prompts "hello gpu" "deep learning" --max_new 12
+```
+
 ## 🍏 Export to CoreML (Mac only)
 
 We provide two workflows:
@@ -130,6 +173,13 @@ engine/
   ├── fused_lnresidual.py
   ├── perf_toggles.py
   ├── runner.py
+engine_runtime/
+  ├── api.py
+  ├── engine_iface.py
+  ├── engine_torch.py
+  ├── kv_cache.py
+  ├── sampling.py
+  ├── scheduler.py
 kernels/
   ├── attention_triton.py
 models/              # Exported models (ONNX, CoreML, quantized)
@@ -157,6 +207,8 @@ scripts/
 - Minimal CI parity check job
 
 - Add more transformer variants (GPT-style, encoder-decoder)
+
+## Run the Runtime
 
 ## 📌 Notes
 
