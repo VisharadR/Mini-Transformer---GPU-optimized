@@ -45,19 +45,19 @@ In short: *learn how AI goes from the lab to your phone.* 📱
 
 ## 🧩 How It Works
 
-**Model Optimizations**
--Attention kernels avoid quadratic cost on long sequences.
--Fused LayerNorm+Residual reduces memory reads/writes.
+- **Model Optimizations**
+  -Attention kernels avoid quadratic cost on long sequences.
+  -Fused LayerNorm+Residual reduces memory reads/writes.
 
-**Export Pipelines**
--Convert PyTorch model → ONNX → CoreML.
--Verify parity at the logits level to ensure correctness.
+- **Export Pipelines**
+  -Convert PyTorch model → ONNX → CoreML.
+  -Verify parity at the logits level to ensure correctness.
 
-**Runtime**
--Accepts multiple prompts.
--Splits into prefill (process full prompt) and decode (one token at a time).
--Uses a simple scheduler for dynamic batching.
--Streams outputs back with callbacks.
+- **Runtime**
+  -Accepts multiple prompts.
+  -Splits into prefill (process full prompt) and decode (one token at a time).
+  -Uses a simple scheduler for dynamic batching.
+  -Streams outputs back with callbacks.
 
 ---
 
