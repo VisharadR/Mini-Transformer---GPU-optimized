@@ -31,6 +31,9 @@ class TorchEngine(Engine):
     @torch.inference_mode()
     def prefill(self, input_ids: torch.Tensor, attention_mask: Optional[torch.Tensor] = None) -> torch.Tensor:
         x = input_ids.to(self.dev, dtype=torch.long, non_blocking=True)
+        # building a simple attention mask for prefill
+        if attention_mask is None:
+            attention_mask = torch.ones_like(x, dtype=torch.long, device=self.dev)
         with self._amp_ctx():
             logits = self.m(x)  # expect (B, L, V)
         return logits[:, -1, :]
