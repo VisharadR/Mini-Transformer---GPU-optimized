@@ -47,7 +47,7 @@ In short: *learn how AI goes from the lab to your phone.* 📱
 
 - **Model Optimizations**:
   - Attention kernels avoid quadratic cost on long sequences.
-  -Fused LayerNorm+Residual reduces memory reads/writes.
+  - Fused LayerNorm+Residual reduces memory reads/writes.
 
 - **Export Pipelines**:
   - Convert PyTorch model → ONNX → CoreML.
