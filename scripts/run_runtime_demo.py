@@ -68,8 +68,15 @@ def main():
     print(f"Requests: {len(requests)} | Max new tokens per request: {args.max_new}")
     print(f"Engine device: {eng.dev.type.upper()} | AMP: {not args.no_amp}")
     print(f"Sampler: {args.sampler} (topk={args.topk}, temp={args.temperature})")
-    print(f"Step latency: p50={stats['timings']['p50_ms']} ms, p95={stats['timings']['p95_ms']} ms, steps={stats['timings']['steps']}")
-    print(f"End-to-end: total={stats['timings']['total_ms']} ms  |  tokens/s (approx)={toks_per_s:,.1f}")
+
+    pf = stats["timings"]["prefill"]; dc = stats["timings"]["decode"]
+    print(f"Prefill: p50={pf['p50_ms']:.2f} ms, p95={pf['p95_ms']:.2f} ms, requests={pf['count']}")
+    print(f"Decode : p50={dc['p50_ms']:.2f} ms, p95={dc['p95_ms']:.2f} ms, steps={dc['count']}")
+    print(f"End-to-end: total={stats['timings']['total_ms']:.2f} ms")
+
+    gen_tokens = len(requests) * args.max_new
+    toks_per_s = gen_tokens / (stats['timings']['total_ms'] / 1000.0)
+    print(f"Throughput (generated tokens): {toks_per_s:,.1f} tokens/s")
 
     # Reconstruct outputs and optionally save JSON
     results = []
