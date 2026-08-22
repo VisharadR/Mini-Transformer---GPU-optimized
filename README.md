@@ -217,3 +217,47 @@ scripts/
 - CoreML export requires macOS + Apple Silicon.
 
 - ONNX Runtime runs smoothly on CPU/GPU across platforms.
+
+## AMD ROCm Support
+
+An AMD/ROCm backend lives alongside the CUDA path, added additively (every
+ROCm-specific module is a new `_rocm`-suffixed file; nothing in the
+CUDA/CPU path was changed). Full details, install steps, and verification
+notes are in [`docs/AMD_ROCM.md`](docs/AMD_ROCM.md) — summary below.
+
+**Install:**
+```bash
+pip install torch --index-url https://download.pytorch.org/whl/rocm6.2
+pip install triton numpy
+```
+
+**New modules:**
+```bash
+engine/device.py                    # get_device_type() -> "cuda" | "rocm" | "cpu"
+engine/fused_lnresidual_rocm.py     # HIP kernel port + pure-PyTorch fallback
+engine/perf_toggles_rocm.py         # MIOpen benchmark mode, no NVIDIA-only TF32 flags
+kernels/attention_triton_rocm.py    # AMD-tuned autotune configs + launcher + correctness test
+baselines/benchmark_rocm.py         # same p50/p95/tokens-per-s harness, tagged by backend
+```
+
+**Run the ROCm benchmark:**
+```bash
+python baselines/benchmark_rocm.py
+```
+
+**Backend comparison** (placeholders — not yet measured on real AMD hardware; see `docs/AMD_ROCM.md`):
+
+| Backend | seq=128, batch=1 p50 (ms) | tokens/s | seq=512, batch=16 p50 (ms) | tokens/s |
+|---|---|---|---|---|
+| PyTorch – CUDA (NVIDIA) | TBD | TBD | TBD | TBD |
+| PyTorch – ROCm (AMD) | TBD | TBD | TBD | TBD |
+| Triton – CUDA (NVIDIA) | TBD | TBD | TBD | TBD |
+| Triton – ROCm (AMD) | TBD | TBD | TBD | TBD |
+
+**Known limitations:**
+- No AMD GPU was available in this environment — the HIP kernel build and
+  the Triton ROCm kernel have been reviewed and syntax/import-tested (see
+  `docs/AMD_ROCM.md`), but never compiled or run on real ROCm hardware.
+- GitHub Actions has no free AMD GPU runners, so CI (`.github/workflows/rocm-smoke.yml`)
+  only does an import-only smoke test on CPU. Real ROCm benchmarking and
+  correctness checks must be run manually on AMD hardware.

@@ -1,0 +1,66 @@
+name: rocm-smoke
+
+# GitHub Actions has no free AMD GPU runners, so this workflow only checks
+# that the ROCm-path modules *import* cleanly on a CPU-only Linux runner
+# (engine.device.get_device_type() falls back to "cpu" there, and the ROCm
+# modules skip HIP compilation / GPU kernel launches accordingly). It does
+# NOT run benchmark_rocm.py, launch any GPU kernel, or validate ROCm
+# numerics. Real ROCm benchmarking and correctness testing must be run
+# manually on AMD hardware -- see docs/AMD_ROCM.md.
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - "engine/device.py"
+      - "engine/fused_lnresidual_rocm.py"
+      - "engine/perf_toggles_rocm.py"
+      - "kernels/attention_triton_rocm.py"
+      - "baselines/benchmark_rocm.py"
+      - ".github/workflows/rocm-smoke.yml"
+  pull_request:
+    paths:
+      - "engine/device.py"
+      - "engine/fused_lnresidual_rocm.py"
+      - "engine/perf_toggles_rocm.py"
+      - "kernels/attention_triton_rocm.py"
+      - "baselines/benchmark_rocm.py"
+      - ".github/workflows/rocm-smoke.yml"
+
+jobs:
+  import-smoke-test:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install CPU-only deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install numpy
+          pip install triton || echo "triton unavailable on this runner, kernel import check will be skipped"
+
+      - name: Import ROCm-path modules (CPU fallback)
+        run: |
+          python - <<'PY'
+          from engine.device import get_device_type
+
+          device_type = get_device_type()
+          print("detected device type:", device_type)
+          assert device_type == "cpu", f"expected cpu on this runner, got {device_type}"
+
+          import engine.fused_lnresidual_rocm
+          import engine.perf_toggles_rocm
+          print("engine.*_rocm modules imported OK")
+
+          try:
+              import kernels.attention_triton_rocm
+              print("kernels.attention_triton_rocm imported OK")
+          except ImportError as e:
+              print("triton not installed on this runner, skipping kernel import:", e)
+          PY
